@@ -1,0 +1,16 @@
+{% extends 'first/base.html' %}
+{% load static %}
+{% block content %}
+    <p>변수를 표현해보자.</p>
+    <p>{{ current_date }}</p>
+    <p>장고에 내장된 date 필터로 변수를 포매팅하자.</p>
+    <p>{{ current_date|date:"Y년 m월 d일 H시 i분 s초" }}</p>
+
+    <br>
+
+    <a href="{% url 'select' %}">시작하기!</a>
+
+    <br>
+
+    <img src="{% static 'first/thank-card.png' %}">
+{% endblock %}
