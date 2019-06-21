@@ -12,6 +12,11 @@ def list(request):
 
 
 def create(request):
+    if request.method == "POST":
+        form = PostForm(request.POST)
+        if form.is_valid():
+            new_item = form.save() # POST로 넘어온 폼 데이터를 자동으로 저장
+        return HttpResponseRedirect('/second/list/')
     form = PostForm()
     return render(request, 'second/create.html', { 'form': form })
 
