@@ -1,7 +1,7 @@
-from django.shortcuts import render, get_object_or_404
-from . models import Restaurant
+from django.shortcuts import render, get_object_or_404, redirect
+from . models import Restaurant, Review
 from django.core.paginator import Paginator
-from . forms import RestaurantForm
+from . forms import RestaurantForm, ReviewForm
 from django.http import HttpResponseRedirect
 
 
@@ -45,10 +45,12 @@ def update(request):
     return HttpResponseRedirect('/third/list/')
 
 
-def detail(request):
-    if 'id' in request.GET:
-        item = get_object_or_404(Restaurant, pk=request.GET.get('id'))
-        return render(request, 'third/detail.html', {'item': item})
+def detail(request, id): # path parameter로 선언하면 id를 받을 수 있음
+    if 'id' is not None:
+        # item = get_object_or_404(Restaurant, pk=request.GET.get('id'))
+        item = get_object_or_404(Restaurant, pk=id)
+        reviews = Review.objects.filter(restaurant=item).all() # 식당에 해당하는 리뷰을 조회
+        return render(request, 'third/detail.html', {'item': item, 'reviews': reviews})
     return HttpResponseRedirect('/third/list/')
 
 
@@ -57,3 +59,17 @@ def delete(request):
         item = get_object_or_404(Restaurant, pk=request.GET.get('id'))
         item.delete()
     return HttpResponseRedirect('/third/list/')
+
+
+def review_create(request, restaurant_id):
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            new_item = form.save()
+        # HttpResponseRedirect을 사용하면 url을 다 써주어야하고, 만약 url이 변경되었을 때 함께 수정해주어야 하는 번거로움이 있음
+        # shortcuts의 redirct를 사용하면 url 기반이 아니라 urls.py에 정의한 view name 기반으로 움직이기 때문에
+        # url이 변경되더라고 view name이 그대로라면 변경하지 않아도 된다.
+        return redirect('restaurant-detail', id=restaurant_id)
+    item = get_object_or_404(Restaurant, pk=restaurant_id)
+    form = ReviewForm(initial={'restaurant': item})
+    return render(request, 'third/review_create.html', {'form': form, 'item': item})
