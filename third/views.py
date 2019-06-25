@@ -3,11 +3,14 @@ from . models import Restaurant, Review
 from django.core.paginator import Paginator
 from . forms import RestaurantForm, ReviewForm
 from django.http import HttpResponseRedirect
+from django.db.models import Count, Avg
 
 
 # Create your views here.
 def list(request):
-    restaurants = Restaurant.objects.all()
+    restaurants = Restaurant.objects.all()\
+        .annotate(reviews_count = Count('review'))\
+        .annotate(average_point=Avg('review__point'))
     page = request.GET.get('page')  # 파라미터로 넘어온 현재 페이지 값
     paginator = Paginator(restaurants, 5) # 한 페이지에 5개씩 표시
     items = paginator.get_page(page) # 해당 페이지에 맞는 리스트로 필터링
@@ -73,3 +76,20 @@ def review_create(request, restaurant_id):
     item = get_object_or_404(Restaurant, pk=restaurant_id)
     form = ReviewForm(initial={'restaurant': item})
     return render(request, 'third/review_create.html', {'form': form, 'item': item})
+
+
+def review_delete(request, restaurant_id, review_id):
+    item = get_object_or_404(Review, pk=review_id)
+    item.delete()
+    return redirect('restaurant-detail', id=restaurant_id)
+
+
+def review_list(request):
+    reviews = Review.objects.all().select_related().order_by('-created_at')
+    paginator = Paginator(reviews, 10)  # 한 페이지에 10개씩 표시
+    page = request.GET.get('page')  # query params에서 page 데이터를 가져옴
+    items = paginator.get_page(page)  # 해당 페이지의 아이템으로 필터링
+    context = {
+        'reviews': items
+    }
+    return render(request, 'third/review_list.html', context)
