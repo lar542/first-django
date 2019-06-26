@@ -5,6 +5,11 @@ class Restaurant(models.Model):
     name = models.CharField(max_length=30)
     address = models.CharField(max_length=200)
 
+    # 속성을 추가할 때 default 속성을 지정하면 기존에 이미 저장되어 있는 레코드들의 컬럼 값들은
+    # default에서 지정된 값으로 채워진다.
+    image = models.CharField(max_length=500, default=None, null=True)
+    password = models.CharField(max_length=20, default=None, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 

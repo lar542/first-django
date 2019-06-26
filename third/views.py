@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from . models import Restaurant, Review
 from django.core.paginator import Paginator
-from . forms import RestaurantForm, ReviewForm
+from . forms import RestaurantForm, ReviewForm, UpdateRestaurantForm
 from django.http import HttpResponseRedirect
 from django.db.models import Count, Avg
 
@@ -32,18 +32,15 @@ def create(request):
 
 def update(request):
     if request.method == 'POST' and 'id' in request.POST:
-        # 선택한 id에 해당하는 데이터 조회
-        # item = Restaurant.objects.get(pk=request.POST.get('id'))
-        # 404 처리
         item = get_object_or_404(Restaurant, pk=request.POST.get('id'))
-        # 폼에서 입력한 데이터를 RestaurantForm으로 담고 수정할 대상을 instance 인자로 넘긴다
-        form = RestaurantForm(request.POST, instance=item)
-        if form.is_valid():
-            item = form.save() # 유효하면 update
+        password = request.POST.get('password', '') # 비밀번호 값이 있으면 해당 값을 가져오고 없으면 공백으로 가져옴
+        form = UpdateRestaurantForm(request.POST, instance=item)
+        if form.is_valid() and password == item.password: # 유효성 체크 및 비밀번호 검증
+            item = form.save()
     elif request.method == 'GET':
-        # item = Restaurant.objects.get(pk=request.GET.get('id'))
         item = get_object_or_404(Restaurant, pk=request.GET.get('id'))
-        form = RestaurantForm(instance=item) # 조회한 데이터를 RestaurantForm으로 담는다.
+        form = RestaurantForm(instance=item)
+        form.password = ""
         return render(request, 'third/update.html', {'form': form})
     return HttpResponseRedirect('/third/list/')
 
@@ -57,11 +54,14 @@ def detail(request, id): # path parameter로 선언하면 id를 받을 수 있�
     return HttpResponseRedirect('/third/list/')
 
 
-def delete(request):
-    if 'id' in request.GET:
-        item = get_object_or_404(Restaurant, pk=request.GET.get('id'))
-        item.delete()
-    return HttpResponseRedirect('/third/list/')
+def delete(request, id):
+    item = get_object_or_404(Restaurant, pk=id)
+    if request.method == 'POST' and 'password' in request.POST:
+        if item.password == request.POST.get('password'):
+            item.delete()
+            return redirect('list')
+        return redirect('restaurant-detail', id=id)
+    return render(request, 'third/delete.html', {'item': item})
 
 
 def review_create(request, restaurant_id):
